@@ -15,6 +15,7 @@ endif()
 
 if(MSVC)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4244 /wd4800 /wd4267 /wd4146 /wd4814")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Oi- /GS- /EHa-")
 endif(MSVC)
 
 if(WIN32)
@@ -55,6 +56,11 @@ set(SRCS ${SRCS} trunc.cpp)
 set(SRCS ${SRCS} frexp.cpp)
 set(SRCS ${SRCS} ldexp.cpp)
 set(SRCS ${SRCS} sqrt.cpp)
+
+if(MSVC)
+  enable_language(ASM_MASM)
+  set(SRCS ${SRCS} stack.msvc.asm)
+endif(MSVC)
 
 add_library(zrt ${SRCS})
 

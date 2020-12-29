@@ -18,7 +18,9 @@ static inline void crash(const char *msg, int len)
 
   fd_writev(STDERR, &io, 1);
 
+#ifndef _MSC_VER
   asm volatile ("int $0x03");
+#endif
 
   proc_exit(1);
 }

@@ -10,8 +10,6 @@
 #include "windows.h"
 #include <stdint.h>
 
-extern "C" int main(int, char**, char**);
-
 namespace
 {
   void parse_args(HANDLE heap, wchar_t *cmdline, int &argc, char **&argv)
@@ -106,40 +104,48 @@ namespace
   }
 }
 
-extern "C" int mainCRTStartup()
-{
-  int argc;
-  char **argv;
-  int envc;
-  char **envp;
+extern "C" {
 
-  auto heap = HeapCreate(0, 0, 0);
+  int _fltused = 0;
 
-  parse_args(heap, GetCommandLineW(), argc, argv);
-  parse_envp(heap, GetEnvironmentStringsW(), envc, envp);
+  int main(int, char**, char**);
 
-  ExitProcess(main(argc, argv, envp));
-}
+  int mainCRTStartup()
+  {
+    int argc;
+    char** argv;
+    int envc;
+    char** envp;
 
-extern "C" int WinMainCRTStartup()
-{
-  int argc;
-  char **argv;
-  int envc;
-  char **envp;
+    auto heap = HeapCreate(0, 0, 0);
 
-  auto heap = HeapCreate(0, 0, 0);
+    parse_args(heap, GetCommandLineW(), argc, argv);
+    parse_envp(heap, GetEnvironmentStringsW(), envc, envp);
 
-  parse_args(heap, GetCommandLineW(), argc, argv);
-  parse_envp(heap, GetEnvironmentStringsW(), envc, envp);
+    ExitProcess(main(argc, argv, envp));
+  }
 
-  ExitProcess(main(argc, argv, envp));
-}
+  int WinMainCRTStartup()
+  {
+    int argc;
+    char** argv;
+    int envc;
+    char** envp;
+
+    auto heap = HeapCreate(0, 0, 0);
+
+    parse_args(heap, GetCommandLineW(), argc, argv);
+    parse_envp(heap, GetEnvironmentStringsW(), envc, envp);
+
+    ExitProcess(main(argc, argv, envp));
+  }
 
 #ifdef __MINGW64__
 
-extern "C" void __main()
-{
-}
+  void __main()
+  {
+  }
 
 #endif
+
+}
