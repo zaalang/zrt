@@ -74,10 +74,35 @@ extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_
   return 0;
 }
 
+//|///////////////////// fd_stat ////////////////////////////////////////////
+extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
+{
+  auto handle = get_osfhandle(fd);
+
+  BY_HANDLE_FILE_INFORMATION info;
+  auto R = GetFileInformationByHandle(handle, &info);
+
+  if (!R)
+    return GetLastError();
+
+  fs->type = 4;
+  fs->size = ((uint64_t)info.nFileSizeHigh << 32) + info.nFileSizeLow;
+  fs->atime = (((uint64_t)info.ftLastAccessTime.dwHighDateTime << 32) + info.ftLastAccessTime.dwLowDateTime - 116444736000000000) * 100;
+  fs->mtime = (((uint64_t)info.ftLastWriteTime.dwHighDateTime << 32) + info.ftLastWriteTime.dwLowDateTime - 116444736000000000) * 100;
+  fs->ctime = (((uint64_t)info.ftCreationTime.dwHighDateTime << 32) + info.ftCreationTime.dwLowDateTime - 116444736000000000) * 100;
+
+  return 0;
+}
+
 //|///////////////////// fd_readv ///////////////////////////////////////////
 extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n)
 {
   fd_result result = {};
+
+  if (fd == STDIN)
+  {
+    fd = (uintptr_t)GetStdHandle(STD_INPUT_HANDLE);
+  }
 
   auto handle = get_osfhandle(fd);
 

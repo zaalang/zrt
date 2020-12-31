@@ -10,6 +10,7 @@
 #include "fd.h"
 #include <cstddef>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <linux/limits.h>
 #include <asm-generic/errno.h>
@@ -23,6 +24,15 @@ namespace
 
     int ret;
     asm volatile ("syscall" : "=a"(ret) : "0"(n), "D"(path), "S"(flags), "d"(mode) : "rcx", "r11", "memory");
+    return ret;
+  }
+
+  int fdstat(int fd, struct stat *fs)
+  {
+    long n = SYS_fstat;
+
+    long ret;
+    asm volatile ("syscall" : "=a"(ret) : "0"(n), "D"(fd), "S"(fs) : "rcx", "r11", "memory");
     return ret;
   }
 
@@ -127,6 +137,32 @@ extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_
     return -result;
 
   fd = result;
+
+  return 0;
+}
+
+//|///////////////////// fd_stat ////////////////////////////////////////////
+extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
+{
+  struct stat buf;
+  auto res = fdstat(fd, &buf);
+
+  if (res < 0)
+    return -res;
+
+  if (S_ISDIR(buf.st_mode))
+    fs->type = 3;
+
+  if (S_ISREG(buf.st_mode))
+    fs->type = 4;
+
+  if (S_ISLNK(buf.st_mode))
+    fs->type = 7;
+
+  fs->size = buf.st_size;
+  fs->atime = (uint64_t)buf.st_atim.tv_sec * 1000000000 + buf.st_atim.tv_nsec;
+  fs->ctime = (uint64_t)buf.st_ctim.tv_sec * 1000000000 + buf.st_ctim.tv_nsec;
+  fs->mtime = (uint64_t)buf.st_mtim.tv_sec * 1000000000 + buf.st_mtim.tv_nsec;
 
   return 0;
 }

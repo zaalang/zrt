@@ -15,6 +15,15 @@ constexpr uintptr_t STDIN = 0;
 constexpr uintptr_t STDOUT = 1;
 constexpr uintptr_t STDERR = 2;
 
+struct filestat
+{
+  uint8_t type;
+  uint64_t size;
+  uint64_t atime;
+  uint64_t mtime;
+  uint64_t ctime;
+};
+
 struct iovec
 {
   uint8_t *data;
@@ -66,6 +75,8 @@ struct fd_result
 };
 
 extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_t rights, uint32_t fdflags);
+
+extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs);
 
 extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n);
 extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t offset);
