@@ -9,12 +9,53 @@
 
 #include "fd.h"
 #include <cstddef>
+#include <limits.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/syscall.h>
-#include <linux/limits.h>
-#include <asm-generic/errno.h>
-#include <asm-generic/fcntl.h>
+
+#define	ENAMETOOLONG 36
+
+#define O_RDONLY 00000000
+#define O_WRONLY 00000001
+#define O_RDWR 00000002
+
+#define O_CREAT 00000100
+#define O_EXCL 00000200
+#define O_TRUNC 00001000
+#define O_APPEND 00002000
+#define O_NONBLOCK 00004000
+#define O_DSYNC 00010000
+#define O_SYNC (04000000|O_DSYNC)
+
+#define S_IFMT 0170000
+#define S_IFDIR 0040000
+#define S_IFCHR 0020000
+#define S_IFBLK 0060000
+#define S_IFREG 0100000
+#define S_IFIFO 0010000
+#define S_IFLNK 0120000
+#define S_IFSOCK 0140000
+
+struct stat
+{
+  dev_t st_dev;
+  ino_t st_ino;
+  nlink_t st_nlink;
+
+  mode_t st_mode;
+  uid_t st_uid;
+  gid_t st_gid;
+  unsigned int __pad0;
+  dev_t st_rdev;
+  off_t st_size;
+  blksize_t st_blksize;
+  blkcnt_t st_blocks;
+
+  struct timespec st_atim;
+  struct timespec st_mtim;
+  struct timespec st_ctim;
+  long __unused[3];
+};
 
 namespace
 {
@@ -27,7 +68,7 @@ namespace
     return ret;
   }
 
-  int fdstat(int fd, struct stat *fs)
+  int fstat(int fd, struct stat *fs)
   {
     long n = SYS_fstat;
 
@@ -145,18 +186,18 @@ extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_
 extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
 {
   struct stat buf;
-  auto res = fdstat(fd, &buf);
+  auto res = fstat(fd, &buf);
 
   if (res < 0)
     return -res;
 
-  if (S_ISDIR(buf.st_mode))
+  if ((buf.st_mode & S_IFMT) == S_IFDIR)
     fs->type = 3;
 
-  if (S_ISREG(buf.st_mode))
+  if ((buf.st_mode & S_IFMT) == S_IFREG)
     fs->type = 4;
 
-  if (S_ISLNK(buf.st_mode))
+  if ((buf.st_mode & S_IFMT) == S_IFLNK)
     fs->type = 7;
 
   fs->size = buf.st_size;

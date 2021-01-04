@@ -34,16 +34,17 @@ extern "C" {
     proc_exit(main(argc, argv, envp));
   }
 
-  asm(
-    ".global _start\n"
-    ".intel_syntax noprefix\n"
-    "_start:\n"
-    "     xor rbp, rbp\n"
-    "     mov rdi, [rsp]\n"          // argc
-    "     lea rsi, [rsp+8]\n"        // argv
-    "     lea rdx, [rsp+rdi*8+16]\n" // envp
-    "     and rsp, -16\n"
-    "     call __start\n"
-    "     hlt\n"
-  );
+  void __attribute__((naked)) _start()
+  {
+    asm(
+      ".intel_syntax noprefix\n"
+      "    xor rbp, rbp\n"
+      "    mov rdi, [rsp]\n"          // argc
+      "    lea rsi, [rsp+8]\n"        // argv
+      "    lea rdx, [rsp+rdi*8+16]\n" // envp
+      "    and rsp, -16\n"
+      "    call __start\n"
+      "    hlt\n"
+    );
+  }
 }
