@@ -16,7 +16,7 @@ struct thread_data
   char bytes[128];
 };
 
-#ifdef __unix__
+#if defined __unix__
 
 static inline struct thread_data *thread_self()
 {

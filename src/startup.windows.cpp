@@ -7,6 +7,8 @@
 // The code contained herein is licensed for use without limitation
 //
 
+#include "proc.h"
+#include "thread.h"
 #include "windows.h"
 #include <stdint.h>
 
@@ -122,7 +124,7 @@ extern "C" {
     parse_args(heap, GetCommandLineW(), argc, argv);
     parse_envp(heap, GetEnvironmentStringsW(), envc, envp);
 
-    ExitProcess(main(argc, argv, envp));
+    return main(argc, argv, envp);
   }
 
   int WinMainCRTStartup()
@@ -137,10 +139,10 @@ extern "C" {
     parse_args(heap, GetCommandLineW(), argc, argv);
     parse_envp(heap, GetEnvironmentStringsW(), envc, envp);
 
-    ExitProcess(main(argc, argv, envp));
+    return main(argc, argv, envp);
   }
 
-#ifdef __MINGW64__
+#if defined __MINGW64__
 
   void __main()
   {

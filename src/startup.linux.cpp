@@ -31,7 +31,7 @@ extern "C" {
   {
     init_tls(&module);
 
-    proc_exit(main(argc, argv, envp));
+    exit(main(argc, argv, envp));
   }
 
   void __attribute__((naked)) _start()

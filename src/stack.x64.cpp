@@ -27,7 +27,7 @@ extern "C" {
     __stack_chk_fail();
   }
 
-#ifdef __MINGW64__
+#if defined __MINGW64__
 
   void ___chkstk_ms()
   {
@@ -86,7 +86,7 @@ extern "C" {
 
 #endif
 
-#ifdef _MSC_VER
+#if defined _MSC_VER
 
   void __security_check_cookie(uintptr_t cookie)
   {

@@ -22,5 +22,5 @@ static inline void crash(const char *msg, int len)
   asm volatile ("int $0x03");
 #endif
 
-  proc_exit(1);
+  exit(1);
 }

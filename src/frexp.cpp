@@ -5,7 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#ifdef _MSC_VER
+#if defined _MSC_VER
 extern "C" void* memcpy(void* dst, const void* src, size_t n);
 #define __builtin_memcpy memcpy
 #pragma intrinsic(memcpy)
