@@ -27,12 +27,10 @@ set(SRCS ${SRCS} ${PROJECT_SOURCE_DIR}/src/proc.h)
 
 if(UNIX)
   set(SRCS ${SRCS} ${PROJECT_SOURCE_DIR}/src/fd.linux.cpp)
-  set(SRCS ${SRCS} ${PROJECT_SOURCE_DIR}/src/proc.linux.cpp)
 endif(UNIX)
 
 if(WIN32)
   set(SRCS ${SRCS} ${PROJECT_SOURCE_DIR}/src/fd.windows.cpp)
-  set(SRCS ${SRCS} ${PROJECT_SOURCE_DIR}/src/proc.windows.cpp)
 endif(WIN32)
 
 set(SRCS ${SRCS} main.cpp)
