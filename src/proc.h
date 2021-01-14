@@ -9,4 +9,4 @@
 
 #include <cstdint>
 
-extern "C" void exit(uint32_t rval);
+extern "C" void exit(int rval);

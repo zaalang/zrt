@@ -14,7 +14,7 @@
 #include <sys/syscall.h>
 
 //|///////////////////// exit ///////////////////////////////////////////////
-extern "C" void exit(uint32_t rval)
+extern "C" void exit(int rval)
 {
   {
     long n = SYS_exit_group;
@@ -39,7 +39,7 @@ extern "C" void exit(uint32_t rval)
 #include <windows.h>
 
 //|///////////////////// exit ///////////////////////////////////////////////
-extern "C" void exit(uint32_t rval)
+extern "C" void exit(int rval)
 {
   ExitProcess(rval);
 }
