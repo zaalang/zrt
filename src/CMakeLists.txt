@@ -39,7 +39,6 @@ if(WIN32)
   set(SRCS ${SRCS} fd.windows.cpp)
   set(SRCS ${SRCS} mem.windows.cpp)
   set(SRCS ${SRCS} startup.windows.cpp)
-  set(SRCS ${SRCS} debug.cpp)
 endif(WIN32)
 
 set(SRCS ${SRCS} exit.cpp)

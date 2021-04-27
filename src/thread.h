@@ -7,10 +7,26 @@
 // The code contained herein is licensed for use without limitation
 //
 
+#include <cstdint>
+#include <cstddef>
+
+#define TLS_ABOVE_TP 0
+#define GAP_ABOVE_TP 0
+#define TP_OFFSET 0
+#define DTP_OFFSET 0
+
+struct tls_module
+{
+  uintptr_t base;
+  uintptr_t vaddr;
+  size_t len, size, align;
+};
+
 struct thread_data
 {
-  thread_data *self;  
-  uintptr_t pad[4];
+  thread_data *self;
+  uintptr_t *dtv;
+  uintptr_t pad[3];
   uintptr_t canary;
 
   char bytes[128];
@@ -22,6 +38,11 @@ static inline struct thread_data *thread_self()
 {
   thread_data *self;
   asm ("mov %%fs:0, %0" : "=r"(self) );
+
+#ifdef TLS_ABOVE_TP
+  self = (thread_data*)((uintptr_t)self - sizeof(thread_data) - TP_OFFSET);
+#endif
+
   return self;
 }
 
