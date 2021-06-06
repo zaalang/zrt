@@ -13,14 +13,14 @@
 #include <sys/syscall.h>
 #include <sys/user.h>
 
-#define PROT_READ	0x1		/* Page can be read.  */
-#define PROT_WRITE	0x2		/* Page can be written.  */
-#define PROT_EXEC	0x4		/* Page can be executed.  */
-#define PROT_NONE	0x0		/* Page can not be accessed.  */
+#define PROT_READ 0x1      /* Page can be read. */
+#define PROT_WRITE 0x2     /* Page can be written. */
+#define PROT_EXEC 0x4      /* Page can be executed. */
+#define PROT_NONE 0x0      /* Page can not be accessed. */
 
-#define MAP_SHARED    0x01	/* Share changes.  */
-#define MAP_PRIVATE	  0x02	/* Changes are private.  */
-#define MAP_ANONYMOUS 0x20	/* Don't use a file.  */
+#define MAP_SHARED 0x01    /* Share changes. */
+#define MAP_PRIVATE 0x02   /* Changes are private. */
+#define MAP_ANONYMOUS 0x20 /* Don't use a file. */
 
 namespace
 {
@@ -51,7 +51,7 @@ extern "C" mem_result mem_alloc(uint64_t size)
 {
   mem_result result = {};
 
-  size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+  size = (size + PAGE_SIZE - 1) & -PAGE_SIZE;
 
   result.size = size;
   result.addr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
