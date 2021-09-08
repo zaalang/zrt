@@ -29,7 +29,7 @@ extern "C" {
 
 #if defined __MINGW64__
 
-  void ___chkstk_ms()
+  __attribute__((naked)) void ___chkstk_ms()
   {
     asm volatile (
       ".intel_syntax noprefix\n"
@@ -51,7 +51,7 @@ extern "C" {
       );
   }
 
-  void __alloca()
+  __attribute__((naked)) void __alloca()
   {
     asm volatile (
       ".intel_syntax noprefix\n"
@@ -60,7 +60,7 @@ extern "C" {
       );
   }
 
-  void ___chkstk()
+  __attribute__((naked)) void ___chkstk()
   {
     asm volatile (
       ".intel_syntax noprefix\n"

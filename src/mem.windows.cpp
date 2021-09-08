@@ -36,7 +36,7 @@ extern "C" mem_result mem_alloc(uint64_t size)
 }
 
 //|///////////////////// mem_free ///////////////////////////////////////////
-extern "C" void mem_free(void const *addr)
+extern "C" void mem_free(void const *addr, uint64_t size)
 {
-  VirtualFree(const_cast<void*>(addr), 0, MEM_RELEASE);
+  VirtualFree(const_cast<void*>(addr), size, MEM_RELEASE);
 }

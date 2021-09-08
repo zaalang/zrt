@@ -67,7 +67,7 @@ extern "C" mem_result mem_alloc(uint64_t size)
 }
 
 //|///////////////////// mem_free ///////////////////////////////////////////
-extern "C" void mem_free(void const *addr)
+extern "C" void mem_free(void const *addr, uint64_t size)
 {
-  munmap(const_cast<void*>(addr), PTRDIFF_MAX);
+  munmap(const_cast<void*>(addr), size);
 }

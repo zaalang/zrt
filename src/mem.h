@@ -19,4 +19,4 @@ struct mem_result
 };
 
 extern "C" mem_result mem_alloc(uint64_t size);
-extern "C" void mem_free(void const *addr);
+extern "C" void mem_free(void const *addr, uint64_t size);

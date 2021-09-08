@@ -133,7 +133,7 @@ extern "C" {
     exit(main(argc, argv, envp));
   }
 
-  void __attribute__((naked)) _start()
+  __attribute__((naked)) void _start()
   {
     asm(
       ".intel_syntax noprefix\n"
