@@ -48,7 +48,7 @@ extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_
     access |= GENERIC_WRITE;
 
   if (fdflags & fd::append)
-    access |= FILE_APPEND_DATA;
+    access = FILE_APPEND_DATA;
 
   auto disposition = OPEN_EXISTING;
 
@@ -85,7 +85,7 @@ extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
   if (!R)
     return GetLastError();
 
-  fs->type = 4;
+  fs->type = filetype::regular_file;
   fs->size = ((uint64_t)info.nFileSizeHigh << 32) + info.nFileSizeLow;
   fs->atime = (((uint64_t)info.ftLastAccessTime.dwHighDateTime << 32) + info.ftLastAccessTime.dwLowDateTime - 116444736000000000) * 100;
   fs->mtime = (((uint64_t)info.ftLastWriteTime.dwHighDateTime << 32) + info.ftLastWriteTime.dwLowDateTime - 116444736000000000) * 100;
@@ -135,8 +135,8 @@ extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t o
 
   OVERLAPPED overlapped = {};
 
-  overlapped.Offset = offset & 0xFFFFFFFF;
-  overlapped.OffsetHigh = (offset >> 32) & 0xFFFFFFFF;
+  overlapped.Offset = offset & 0xffffffff;
+  overlapped.OffsetHigh = (offset >> 32) & 0xffffffff;
 
   for(uint64_t i = 0; i < n; ++i)
   {
@@ -234,8 +234,8 @@ extern "C" fd_result fd_pwritev(uintptr_t fd, ciovec const *iovs, uint64_t n, ui
 
   OVERLAPPED overlapped = {};
 
-  overlapped.Offset = offset & 0xFFFFFFFF;
-  overlapped.OffsetHigh = (offset >> 32) & 0xFFFFFFFF;
+  overlapped.Offset = offset & 0xffffffff;
+  overlapped.OffsetHigh = (offset >> 32) & 0xffffffff;
 
   for(uint64_t i = 0; i < n; ++i)
   {

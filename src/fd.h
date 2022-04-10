@@ -15,6 +15,18 @@ constexpr uintptr_t STDIN = 0;
 constexpr uintptr_t STDOUT = 1;
 constexpr uintptr_t STDERR = 2;
 
+enum filetype
+{
+  unknown,
+  block_device,
+  character_device,
+  directory,
+  regular_file,
+  socket_dgram,
+  socket_stream,
+  symbolic_link,
+};
+
 struct filestat
 {
   uint8_t type;

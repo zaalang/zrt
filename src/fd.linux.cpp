@@ -192,13 +192,13 @@ extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
     return -res;
 
   if ((buf.st_mode & S_IFMT) == S_IFDIR)
-    fs->type = 3;
+    fs->type = filetype::directory;
 
   if ((buf.st_mode & S_IFMT) == S_IFREG)
-    fs->type = 4;
+    fs->type = filetype::regular_file;
 
   if ((buf.st_mode & S_IFMT) == S_IFLNK)
-    fs->type = 7;
+    fs->type = filetype::symbolic_link;
 
   fs->size = buf.st_size;
   fs->atime = (uint64_t)buf.st_atim.tv_sec * 1000000000 + buf.st_atim.tv_nsec;
