@@ -23,9 +23,46 @@ struct Elf64_Phdr
   uint64_t p_align;
 };
 
+struct Elf64_Ehdr
+{
+  unsigned char e_ident[16];
+  uint16_t e_type;
+  uint16_t e_machine;
+  uint32_t e_version;
+  uint64_t e_entry;
+  uint64_t e_phoff;
+  uint64_t e_shoff;
+  uint32_t e_flags;
+  uint16_t e_ehsize;
+  uint16_t e_phentsize;
+  uint16_t e_phnum;
+  uint16_t e_shentsize;
+  uint16_t e_shnum;
+  uint16_t e_shstrndx;
+};
+
+struct Elf64_Dyn
+{
+  uint64_t d_tag;
+  uint64_t d_val;
+};
+
+struct Elf64_Sym
+{
+  uint32_t st_name;
+  uint8_t st_info;
+  uint8_t st_other;
+  uint16_t st_shndx;
+  uint64_t st_value;
+  uint64_t st_size;
+};
+
 namespace
 {
   tls_module tls;
+
+  extern "C" uintptr_t vdso_clock_getres;
+  extern "C" uintptr_t vdso_clock_gettime;
 
   void init_tcb(void *memory)
   {
@@ -111,6 +148,97 @@ namespace
 
     return 2*sizeof(void*) + sizeof(thread_data) + GAP_ABOVE_TP + tls.size + tls.align;
   }
+
+  bool strcmp(const char *lhs, const char *rhs)
+  {
+    for(; *lhs == *rhs && *rhs != 0; ++lhs, ++rhs)
+      ;
+
+    return *lhs == *rhs;
+  }
+
+  void init_vdso(char **envp)
+  {
+    int envc = 0;
+    while (envp[envc])
+      ++envc;
+
+    size_t *auxv = (size_t*)(envp + envc + 1);
+
+    uintptr_t ehdr = 0;
+
+    for(int i = 0; auxv[i]; i += 2)
+    {
+      if (auxv[i] == 33) // AT_SYSINFO_EHDR
+      {
+        ehdr = auxv[i+1];
+        break;
+      }
+    }
+
+    if (!ehdr)
+      return;
+
+    uintptr_t base = 0;
+    uintptr_t dynv = 0;
+
+    for(size_t i = 0; i < ((Elf64_Ehdr*)ehdr)->e_phnum; ++i)
+    {
+      auto entry = (Elf64_Phdr*)(ehdr + ((Elf64_Ehdr*)ehdr)->e_phoff + i*((Elf64_Ehdr*)ehdr)->e_phentsize);
+
+      switch (entry->p_type)
+      {
+        case 1: // PT_LOAD
+          base = ehdr + entry->p_offset - entry->p_vaddr;
+          break;
+
+        case 2: // PT_DYNAMIC
+          dynv = ehdr + entry->p_offset;
+          break;
+      }
+    }
+
+    if (!base || !dynv)
+      return;
+
+    uintptr_t strtab = 0;
+    uintptr_t hashtb = 0;
+    uintptr_t symtab = 0;
+
+    for(int i = 0; ((uint64_t*)dynv)[i]; i += 2)
+    {
+      auto entry = (Elf64_Dyn*)((uintptr_t*)dynv + i);
+
+      switch (entry->d_tag)
+      {
+        case 5: // DT_STRTAB
+          strtab = base + entry->d_val;
+          break;
+
+        case 6: // DT_SYMTAB
+          symtab = base + entry->d_val;
+          break;
+
+        case 4: // DT_HASH
+          hashtb = base + entry->d_val;
+          break;
+      }
+    }
+
+    if (!strtab || !hashtb || !symtab)
+      return;
+
+    for(int i = 0; i < ((int32_t*)hashtb)[1]; ++i)
+    {
+       auto entry = (Elf64_Sym*)(symtab) + i;
+
+       if (strcmp((const char*)(strtab + entry->st_name), "__vdso_clock_getres"))
+         vdso_clock_getres = base + entry->st_value;
+
+       if (strcmp((const char*)(strtab + entry->st_name), "__vdso_clock_gettime"))
+         vdso_clock_gettime = base + entry->st_value;
+    }
+  }
 }
 
 extern "C" {
@@ -130,6 +258,8 @@ extern "C" {
   {
     init_tcb(alloca(tls_area(envp)));
 
+    init_vdso(envp);
+
     exit(main(argc, argv, envp));
   }
 
@@ -147,5 +277,3 @@ extern "C" {
     );
   }
 }
-
-

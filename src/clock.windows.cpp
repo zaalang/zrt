@@ -62,19 +62,19 @@ namespace
   }
 }
 
-//|///////////////////// clock_getres ///////////////////////////////////////
-extern "C" clock_result clock_getres(uint32_t clockid)
+//|///////////////////// clk_getres /////////////////////////////////////////
+extern "C" clk_result clk_getres(uint32_t clockid)
 {
-  clock_result result = {};
+  clk_result result = {};
 
   switch(clockid)
   {
-    case clock::id::realtime:
+    case clk::id::realtime:
       if (auto err = getres_realtime(&result.timestamp); err < 0)
         result.erno = -err;
       break;
 
-    case clock::id::monotonic:
+    case clk::id::monotonic:
       if (auto err = getres_monotonic(&result.timestamp); err < 0)
         result.erno = -err;
       break;
@@ -86,19 +86,19 @@ extern "C" clock_result clock_getres(uint32_t clockid)
   return result;
 }
 
-//|///////////////////// clock_gettime //////////////////////////////////////
-extern "C" clock_result clock_gettime(uint32_t clockid)
+//|///////////////////// clk_gettime ////////////////////////////////////////
+extern "C" clk_result clk_gettime(uint32_t clockid)
 {
-  clock_result result = {};
+  clk_result result = {};
 
   switch(clockid)
   {
-    case clock::id::realtime:
+    case clk::id::realtime:
       if (auto err = gettime_realtime(&result.timestamp); err < 0)
         result.erno = -err;
       break;
 
-    case clock::id::monotonic:
+    case clk::id::monotonic:
       if (auto err = gettime_monotonic(&result.timestamp); err < 0)
         result.erno = -err;
       break;

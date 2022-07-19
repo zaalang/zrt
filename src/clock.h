@@ -11,7 +11,7 @@
 
 #include <cstdint>
 
-namespace clock
+namespace clk
 {
   enum id
   {
@@ -20,11 +20,11 @@ namespace clock
   };
 }
 
-struct clock_result
+struct clk_result
 {
   uint32_t erno;
   uint64_t timestamp;
 };
 
-extern "C" clock_result clock_getres(uint32_t clockid);
-extern "C" clock_result clock_gettime(uint32_t clockid);
+extern "C" clk_result clk_getres(uint32_t clockid);
+extern "C" clk_result clk_gettime(uint32_t clockid);

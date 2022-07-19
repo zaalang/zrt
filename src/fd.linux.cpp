@@ -92,7 +92,8 @@ namespace
 
     long ret;
     register long r10 asm("r10") = offset;
-    asm volatile ("syscall" : "=a"(ret) : "0"(n), "D"(fd), "S"(iov), "d"(iovcnt), "r"(r10) : "rcx", "r11", "memory");
+    register long r8 asm("r8") = 0;
+    asm volatile ("syscall" : "=a"(ret) : "0"(n), "D"(fd), "S"(iov), "d"(iovcnt), "r"(r10), "r"(r8) : "rcx", "r11", "memory");
     return ret;
   }
 
@@ -111,7 +112,8 @@ namespace
 
     long ret;
     register long r10 asm("r10") = offset;
-    asm volatile ("syscall" : "=a"(ret) : "0"(n), "D"(fd), "S"(iov), "d"(iovcnt), "r"(r10) : "rcx", "r11", "memory");
+    register long r8 asm("r8") = 0;
+    asm volatile ("syscall" : "=a"(ret) : "0"(n), "D"(fd), "S"(iov), "d"(iovcnt), "r"(r10), "r"(r8) : "rcx", "r11", "memory");
     return ret;
   }
 
