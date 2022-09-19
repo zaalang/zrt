@@ -82,7 +82,7 @@ namespace
 
     td->self = td;
     td->canary = 0xdeadbeef;
-
+    td->tls = &tls;
     td->dtv = dtv;
 
 #if TLS_ABOVE_TP
@@ -274,6 +274,7 @@ extern "C" {
       "    and rsp, -16\n"
       "    call __start\n"
       "    hlt\n"
+      ".att_syntax\n"
     );
   }
 }

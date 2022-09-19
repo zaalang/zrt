@@ -34,6 +34,7 @@ if(UNIX)
   set(SRCS ${SRCS} fd.linux.cpp)
   set(SRCS ${SRCS} mem.linux.cpp)
   set(SRCS ${SRCS} clock.linux.cpp)
+  set(SRCS ${SRCS} thread.linux.cpp)
   set(SRCS ${SRCS} startup.linux.cpp)
 endif(UNIX)
 

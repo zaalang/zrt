@@ -33,21 +33,22 @@ extern "C" {
   {
     asm volatile (
       ".intel_syntax noprefix\n"
-      "    push %rax\n"
-      "    push %rcx\n"
-      "    cmp %rax, 0x1000\n"
-      "    lea %rcx, [%rsp+24]\n"
+      "    push rax\n"
+      "    push rcx\n"
+      "    cmp rax, 0x1000\n"
+      "    lea rcx, [rsp+24]\n"
       "    jb 1f\n"
-      " 2: sub %rcx, 0x1000\n"
-      "    test [%rcx], %rcx\n"
-      "    sub %rax, 0x1000\n"
-      "    cmp %rax, 0x1000\n"
+      " 2: sub rcx, 0x1000\n"
+      "    test [rcx], rcx\n"
+      "    sub rax, 0x1000\n"
+      "    cmp rax, 0x1000\n"
       "    ja 2b\n"
-      " 1: sub %rcx, %rax\n"
-      "    test [%rcx], %rcx\n"
-      "    pop %rcx\n"
-      "    pop %rax\n"
+      " 1: sub rcx, rax\n"
+      "    test [rcx], rcx\n"
+      "    pop rcx\n"
+      "    pop rax\n"
       "    ret\n"
+      ".att_syntax\n"
       );
   }
 
@@ -55,8 +56,9 @@ extern "C" {
   {
     asm volatile (
       ".intel_syntax noprefix\n"
-      "    mov %rax, %rcx\n"
+      "    mov rax, rcx\n"
       "    jmp ___chkstk\n"
+      ".att_syntax\n"
       );
   }
 
@@ -64,23 +66,24 @@ extern "C" {
   {
     asm volatile (
       ".intel_syntax noprefix\n"
-      "    push %rcx\n"
-      "    cmp %rax, 0x1000\n"
-      "    lea %rcx, [%rsp+16]\n"
+      "    push rcx\n"
+      "    cmp rax, 0x1000\n"
+      "    lea rcx, [rsp+16]\n"
       "    jb 1f\n"
-      " 2: sub %rcx, 0x1000\n"
-      "    test [%rcx], %rcx\n"
-      "    sub %rax, 0x1000\n"
-      "    cmp %rax, 0x1000\n"
+      " 2: sub rcx, 0x1000\n"
+      "    test [rcx], rcx\n"
+      "    sub rax, 0x1000\n"
+      "    cmp rax, 0x1000\n"
       "    ja 2b\n"
-      " 1: sub %rcx, %rax\n"
-      "    test [%rcx], %rcx\n"
-      "    lea %rax, [%rsp+8]\n"
-      "    mov %rsp, %rcx\n"
-      "    mov %rcx, [%rax-8]\n"
-      "    push [%rax]\n"
-      "    sub %rax, %rsp\n"
+      " 1: sub rcx, rax\n"
+      "    test [rcx], rcx\n"
+      "    lea rax, [rsp+8]\n"
+      "    mov rsp, rcx\n"
+      "    mov rcx, [rax-8]\n"
+      "    push [rax]\n"
+      "    sub rax, rsp\n"
       "    ret\n"
+      ".att_syntax\n"
       );
   }
 

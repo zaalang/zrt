@@ -28,8 +28,9 @@ struct thread_data
   uintptr_t *dtv;
   uintptr_t pad[3];
   uintptr_t canary;
+  tls_module *tls;
 
-  char bytes[128];
+  char bytes[120];
 };
 
 #if defined __unix__
@@ -39,7 +40,7 @@ static inline struct thread_data *thread_self()
   thread_data *self;
   asm ("mov %%fs:0, %0" : "=r"(self) );
 
-#ifdef TLS_ABOVE_TP
+#if TLS_ABOVE_TP
   self = (thread_data*)((uintptr_t)self - sizeof(thread_data) - TP_OFFSET);
 #endif
 
