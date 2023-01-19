@@ -31,7 +31,6 @@
 #define CLONE_SETTLS 0x00080000
 #define CLONE_PARENT_SETTID 0x00100000
 #define CLONE_CHILD_CLEARTID 0x00200000
-#define CLONE_DETACHED 0x00400000
 
 namespace
 {
@@ -151,17 +150,16 @@ extern "C" int pthread_create(pthread_t *thread, pthread_attr_t const *attr, voi
   stack = (void*)((uintptr_t)stack - sizeof(void*));
   *(void**)stack = args;
 
-  long flags = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID | CLONE_DETACHED;
+  long flags = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID;
 
-  int parent_tid;
-  int child_tid;
-
-  int ret = clone(stack, flags, &parent_tid, &child_tid, td);
+  int ret = clone(stack, flags, &td->tid, &td->tid, td);
 
   if (ret < 0)
   {
     munmap(memory, size);
   }
+
+  *thread = (pthread_t)td;
 
   return ret;
 }
