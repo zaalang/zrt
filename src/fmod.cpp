@@ -7,8 +7,8 @@
 
 extern "C" float frexpf(float x, int *exp);
 extern "C" double frexp(double x, int *exp);
-extern "C" double ldexp(double x, int exp);
 extern "C" float ldexpf(float x, int exp);
+extern "C" double ldexp(double x, int exp);
 
 #if defined _MSC_VER
 #define __builtin_isinf(x) ((x) < -1.7976931348623157e+308 || (x) > 1.7976931348623157e+308)

@@ -21,10 +21,10 @@ extern "C" float sqrtf(float x)
 
   auto e = (int)(i >> 23 & 0xff);
 
-  if (x == 0 || (e == 0xff && (x != x || x > 0)))
+  if (x == 0.0f || (e == 0xff && (x != x || x > 0.0f)))
     return x;
 
-  if (x < 0)
+  if (x < 0.0f)
     return __builtin_nanf("");
 
   if (e == 0)
@@ -55,6 +55,7 @@ extern "C" float sqrtf(float x)
   while (r != 0)
   {
     auto t = s + r;
+
     if (t <= i)
     {
       s = t + r;
@@ -86,10 +87,10 @@ extern "C" double sqrt(double x)
 
   auto e = (int)(i >> 52 & 0x7ff);
 
-  if (x == 0 || (e == 0x7ff && (x != x || x > 0)))
+  if (x == 0.0 || (e == 0x7ff && (x != x || x > 0.0)))
     return x;
 
-  if (x < 0)
+  if (x < 0.0)
     return __builtin_nan("");
 
   if (e == 0)
@@ -120,6 +121,7 @@ extern "C" double sqrt(double x)
   while (r != 0)
   {
     auto t = s + r;
+
     if (t <= i)
     {
       s = t + r;

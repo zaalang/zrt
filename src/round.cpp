@@ -14,7 +14,7 @@ extern "C" void* memcpy(void* dst, const void* src, size_t n);
 //|///////////////////// roundf /////////////////////////////////////////////
 extern "C" float roundf(float x)
 {
-  constexpr float toint = 1.0 / 1.1920928955078125e-07F;
+  constexpr float toint = 1.0f / 1.1920928955078125e-07f;
 
   float y;
   uint32_t i;
