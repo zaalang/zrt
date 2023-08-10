@@ -86,7 +86,7 @@ struct fd_result
   uint64_t length;
 };
 
-extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_t rights, uint32_t fdflags);
+extern "C" uint32_t fd_open(uintptr_t *fd, string path, uint32_t oflags, uint64_t rights, uint32_t fdflags);
 
 extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs);
 

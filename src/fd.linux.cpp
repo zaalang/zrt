@@ -130,7 +130,7 @@ namespace
 extern "C" void *memcpy(void * __restrict__ dst, const void * __restrict__ src, size_t n);
 
 //|///////////////////// fd_open ////////////////////////////////////////////
-extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_t rights, uint32_t fdflags)
+extern "C" uint32_t fd_open(uintptr_t *fd, string path, uint32_t oflags, uint64_t rights, uint32_t fdflags)
 {
   if (path.len >= PATH_MAX)
     return ENAMETOOLONG;
@@ -174,12 +174,12 @@ extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_
   if ((rights & fd::rights::read) && (rights & fd::rights::write))
     flags |= O_RDWR;
 
-  int result = open(pathstr, flags, 0666);
+  int rc = open(pathstr, flags, 0666);
 
-  if (result < 0)
-    return -result;
+  if (rc < 0)
+    return -rc;
 
-  fd = result;
+  *fd = rc;
 
   return 0;
 }
@@ -188,10 +188,9 @@ extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_
 extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
 {
   struct stat buf;
-  auto res = fstat(fd, &buf);
 
-  if (res < 0)
-    return -res;
+  if (auto rc = fstat(fd, &buf); rc < 0)
+    return -rc;
 
   if ((buf.st_mode & S_IFMT) == S_IFDIR)
     fs->type = filetype::directory;
@@ -215,13 +214,13 @@ extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n)
 {
   fd_result result = {};
 
-  auto cnt = readv(fd, iovs, n);
+  auto bytes = readv(fd, iovs, n);
 
-  if (cnt > 0)
-    result.length = cnt;
+  if (bytes > 0)
+    result.length = bytes;
 
-  if (cnt < 0)
-    result.erno = -cnt;
+  if (bytes < 0)
+    result.erno = -bytes;
 
   return result;
 }
@@ -231,13 +230,13 @@ extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t o
 {
   fd_result result = {};
 
-  auto cnt = preadv(fd, iovs, n, offset);
+  auto bytes = preadv(fd, iovs, n, offset);
 
-  if (cnt > 0)
-    result.length = cnt;
+  if (bytes > 0)
+    result.length = bytes;
 
-  if (cnt < 0)
-    result.erno = -cnt;
+  if (bytes < 0)
+    result.erno = -bytes;
 
   return result;
 }
@@ -249,25 +248,25 @@ extern "C" fd_result fd_writev(uintptr_t fd, ciovec const *iovs, uint64_t n)
 
   while (n != 0)
   {
-    auto cnt = writev(fd, iovs, n);
+    auto bytes = writev(fd, iovs, n);
 
-    if (cnt >= 0)
+    if (bytes >= 0)
     {
-      result.length += cnt;
+      result.length += bytes;
 
-      for(; n != 0 && iovs[0].len <= uint64_t(cnt); ++iovs, --n)
+      for(; n != 0 && iovs[0].len <= uint64_t(bytes); ++iovs, --n)
       {
-        cnt -= iovs[0].len;
+        bytes -= iovs[0].len;
       }
 
-      if (cnt > 0)
+      if (bytes > 0)
       {
-        ciovec rest = { iovs[0].data + iovs[0].len - cnt, iovs[0].len - cnt };
+        ciovec rest = { iovs[0].data + iovs[0].len - bytes, iovs[0].len - bytes };
 
-        while (rest.len > 0 && (cnt = writev(fd, &rest, 1)) >= 0)
+        while (rest.len > 0 && (bytes = writev(fd, &rest, 1)) >= 0)
         {
-          rest.data += cnt;
-          rest.len -= cnt;
+          rest.data += bytes;
+          rest.len -= bytes;
         }
 
         result.length += iovs[0].len - rest.len;
@@ -277,9 +276,9 @@ extern "C" fd_result fd_writev(uintptr_t fd, ciovec const *iovs, uint64_t n)
       }
     }
 
-    if (cnt < 0)
+    if (bytes < 0)
     {
-      result.erno = -cnt;
+      result.erno = -bytes;
       break;
     }
   }
@@ -294,27 +293,27 @@ extern "C" fd_result fd_pwritev(uintptr_t fd, ciovec const *iovs, uint64_t n, ui
 
   while (n != 0)
   {
-    auto cnt = pwritev(fd, iovs, n, offset);
+    auto bytes = pwritev(fd, iovs, n, offset);
 
-    if (cnt >= 0)
+    if (bytes >= 0)
     {
-      offset += cnt;
-      result.length += cnt;
+      offset += bytes;
+      result.length += bytes;
 
-      for(; n != 0 && iovs[0].len <= uint64_t(cnt); ++iovs, --n)
+      for(; n != 0 && iovs[0].len <= uint64_t(bytes); ++iovs, --n)
       {
-        cnt -= iovs[0].len;
+        bytes -= iovs[0].len;
       }
 
-      if (cnt > 0)
+      if (bytes > 0)
       {
-        ciovec rest = { iovs[0].data + iovs[0].len - cnt, iovs[0].len - cnt };
+        ciovec rest = { iovs[0].data + iovs[0].len - bytes, iovs[0].len - bytes };
 
-        while (rest.len > 0 && (cnt = pwritev(fd, &rest, 1, offset)) >= 0)
+        while (rest.len > 0 && (bytes = pwritev(fd, &rest, 1, offset)) >= 0)
         {
-          rest.data += cnt;
-          rest.len -= cnt;
-          offset += cnt;
+          rest.data += bytes;
+          rest.len -= bytes;
+          offset += bytes;
         }
 
         result.length += iovs[0].len - rest.len;
@@ -324,9 +323,9 @@ extern "C" fd_result fd_pwritev(uintptr_t fd, ciovec const *iovs, uint64_t n, ui
       }
     }
 
-    if (cnt < 0)
+    if (bytes < 0)
     {
-      result.erno = -cnt;
+      result.erno = -bytes;
       break;
     }
   }

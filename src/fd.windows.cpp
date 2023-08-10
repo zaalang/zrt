@@ -30,7 +30,7 @@ namespace
 }
 
 //|///////////////////// fd_open ////////////////////////////////////////////
-extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_t rights, uint32_t fdflags)
+extern "C" uint32_t fd_open(uintptr_t *fd, string path, uint32_t oflags, uint64_t rights, uint32_t fdflags)
 {
   WCHAR filename[4096];
 
@@ -69,7 +69,7 @@ extern "C" uint32_t fd_open(uintptr_t &fd, string path, uint32_t oflags, uint64_
   if (handle == INVALID_HANDLE_VALUE)
     return GetLastError();
 
-  fd = set_osfhandle(handle);
+  *fd = set_osfhandle(handle);
 
   return 0;
 }
@@ -80,9 +80,8 @@ extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
   auto handle = get_osfhandle(fd);
 
   BY_HANDLE_FILE_INFORMATION info;
-  auto R = GetFileInformationByHandle(handle, &info);
 
-  if (!R)
+  if (auto rc = GetFileInformationByHandle(handle, &info); !rc)
     return GetLastError();
 
   fs->type = filetype::regular_file;
@@ -109,9 +108,8 @@ extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n)
   for(uint64_t i = 0; i < n; ++i)
   {
     DWORD bytes;
-    auto R = ReadFile(handle, iovs[i].data, iovs[i].len, &bytes, nullptr);
 
-    if (!R)
+    if (auto rc = ReadFile(handle, iovs[i].data, iovs[i].len, &bytes, nullptr); !rc)
     {
       result.erno = GetLastError();
       break;
@@ -141,9 +139,8 @@ extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t o
   for(uint64_t i = 0; i < n; ++i)
   {
     DWORD bytes;
-    auto R = ReadFile(handle, iovs[i].data, iovs[i].len, &bytes, &overlapped);
 
-    if (!R)
+    if (auto rc = ReadFile(handle, iovs[i].data, iovs[i].len, &bytes, &overlapped); !rc)
     {
       result.erno = GetLastError();
       break;
@@ -211,9 +208,8 @@ extern "C" fd_result fd_writev(uintptr_t fd, ciovec const *iovs, uint64_t n)
   for(uint64_t i = 0; i < n; ++i)
   {
     DWORD written;
-    auto R = WriteFile(handle, iovs[i].data, iovs[i].len, &written, nullptr);
 
-    if (!R)
+    if (auto rc = WriteFile(handle, iovs[i].data, iovs[i].len, &written, nullptr); !rc)
     {
       result.erno = GetLastError();
       break;
@@ -240,9 +236,8 @@ extern "C" fd_result fd_pwritev(uintptr_t fd, ciovec const *iovs, uint64_t n, ui
   for(uint64_t i = 0; i < n; ++i)
   {
     DWORD written;
-    auto R = WriteFile(handle, iovs[i].data, iovs[i].len, &written, &overlapped);
 
-    if (!R)
+    if (auto rc = WriteFile(handle, iovs[i].data, iovs[i].len, &written, &overlapped); !rc)
     {
       result.erno = GetLastError();
       break;

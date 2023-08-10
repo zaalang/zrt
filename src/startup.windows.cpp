@@ -7,10 +7,55 @@
 // The code contained herein is licensed for use without limitation
 //
 
-#include "proc.h"
 #include "thread.h"
-#include "windows.h"
+#include <windows.h>
 #include <stdint.h>
+
+#if defined(_MSC_VER)
+#pragma section(".CRT$XLA",long,read)
+#pragma section(".CRT$XLB",long,read)
+#pragma section(".CRT$XLZ",long,read)
+#pragma section(".rdata$T",long,read)
+#pragma section(".tls",long,read,write)
+#pragma section(".tls$AAA",long,read,write)
+#pragma section(".tls$ZZZ",long,read,write)
+#pragma comment(linker, "/merge:.CRT=.rdata")
+#endif
+
+#if defined(_MSC_VER)
+#define _CRTALLOC(x) __declspec(allocate(x))
+#elif defined(__GNUC__)
+#define _CRTALLOC(x) __attribute__ ((section (x) ))
+#else
+#error Your compiler is not supported.
+#endif
+
+extern "C" {
+
+  unsigned long _tls_index = 0;
+
+  _CRTALLOC(".tls") char *_tls_start = NULL;
+  _CRTALLOC(".tls$ZZZ") char *_tls_end = NULL;
+
+  _CRTALLOC(".CRT$XLA") PIMAGE_TLS_CALLBACK __xl_a = NULL;
+  _CRTALLOC(".CRT$XLZ") PIMAGE_TLS_CALLBACK __xl_z = NULL;
+
+  IMAGE_TLS_DIRECTORY _tls_used = {
+    (ULONG_PTR) &_tls_start,
+    (ULONG_PTR) &_tls_end,
+    (ULONG_PTR) &_tls_index,
+    (ULONG_PTR) (&__xl_a + 1),
+    (ULONG) 0,
+    (ULONG) 0
+  };
+
+  //VOID WINAPI __tls_callback(HANDLE hDllHandle, DWORD dwReason, LPVOID lpreserved)
+  //{
+  //  __debugbreak();
+  //}
+
+  //_CRTALLOC(".CRT$XLB") PIMAGE_TLS_CALLBACK __xl_b = (PIMAGE_TLS_CALLBACK) __tls_callback;
+}
 
 namespace
 {

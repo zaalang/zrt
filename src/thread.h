@@ -30,10 +30,17 @@ struct thread_data
   uintptr_t canary;
   tls_module *tls;
 
-  int pid;
   int tid;
+  int pid;
 
-  char bytes[112];
+  int (*start_routine)(void*);
+  void *start_argument;
+
+  long flags;
+  void *memory;
+  size_t size;
+
+  char bytes[72];
 };
 
 #if defined __unix__

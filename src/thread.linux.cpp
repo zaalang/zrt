@@ -32,14 +32,13 @@
 #define CLONE_PARENT_SETTID 0x00100000
 #define CLONE_CHILD_CLEARTID 0x00200000
 
+#define FUTEX_WAIT 0
+
+#define THREAD_DEAD  0x01
+#define THREAD_DETACHED	0x02
+
 namespace
 {
-  struct start_args
-  {
-    void *(*start_routine)(void*);
-    void *start_arg;
-  };
-
   void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
   {
     long n = SYS_mmap;
@@ -61,6 +60,14 @@ namespace
     return ret;
   }
 
+  void munmap_and_exit(void *addr, size_t length)
+  {
+    long n = SYS_munmap;
+
+    asm volatile ("syscall" :: "a"(n), "D"(addr), "S"(length) : "rcx", "r11", "memory");
+    asm volatile ("syscall" :: "a"(SYS_exit), "D"(0) : "rcx", "r11", "memory");
+  }
+
   int clone(void *stack, unsigned long flags, int *parent_tid, int *child_tid, void *tls)
   {
     long n = SYS_clone;
@@ -76,7 +83,7 @@ namespace
           "    xor ebp, ebp\n"
           "    mov rdi, [rsp]\n"
           "    and rsp, -16\n"
-          "    call __thread_main\n"
+          "    call __thread_start\n"
           "    hlt\n"
           "1:\n"
           ".att_syntax\n"
@@ -84,7 +91,17 @@ namespace
     return ret;
   }
 
-  void exit(void *rval)
+  int futex(int *uaddr, int op, int val, timespec *timeout)
+  {
+    long n = SYS_futex;
+
+    unsigned long ret;
+    register timespec *r10 asm("r10") = timeout;
+    asm volatile ("syscall" : "=a"(ret) : "0"(n), "D"(uaddr), "S"(op), "d"(val), "r"(r10) : "rcx", "r11", "memory");
+    return ret;
+  }
+
+  void exit(int rval)
   {
     for (;;)
     {
@@ -96,14 +113,19 @@ namespace
   }
 }
 
-//|///////////////////// __thread_main //////////////////////////////////////
-extern "C" void __thread_main(start_args *args)
+//|///////////////////// __thread_start /////////////////////////////////////
+extern "C" void __thread_start(thread_data *td)
 {
-  exit(args->start_routine(args->start_arg));
+  auto rval = td->start_routine(td->start_argument);
+
+  if (__atomic_fetch_or(&td->flags, THREAD_DEAD, __ATOMIC_SEQ_CST) & THREAD_DETACHED)
+    munmap_and_exit(td->memory, td->size);
+
+  exit(rval);
 }
 
 //|///////////////////// pthread_create /////////////////////////////////////
-extern "C" int pthread_create(pthread_t *thread, pthread_attr_t const *attr, void* (*start_routine)(void*), void *arg)
+extern "C" int pthread_create(pthread_t *thread, pthread_attr_t const *attr, int (*start_routine)(void*), void *start_argument)
 {
   long size = 8388608;
 
@@ -124,7 +146,7 @@ extern "C" int pthread_create(pthread_t *thread, pthread_attr_t const *attr, voi
   auto tlsbase = ((uintptr_t)memory + size - 2*sizeof(void*) - tls->size - sizeof(thread_data)) & -tls->align;
   auto dtv = (uintptr_t*)(tlsbase + tls->size + sizeof(thread_data));
   auto td = (thread_data*)(tlsbase + tls->size);
-  auto stack = (void*)((uintptr_t)tlsbase & -16);
+  auto stack = tlsbase & -16;
 #endif
 
   dtv[0] = 1;
@@ -134,32 +156,62 @@ extern "C" int pthread_create(pthread_t *thread, pthread_attr_t const *attr, voi
   td->self = td;
   td->canary = 0xdeadbeef;
   td->tls = tls;
-
   td->dtv = dtv;
+  td->pid = self->pid;
+  td->start_routine = start_routine;
+  td->start_argument = start_argument;
+  td->memory = memory;
+  td->size = size;
+  td->flags = 0;
+
+  stack -= sizeof(thread_data*);
+  *(void**)stack = td;
+
+  *thread = (pthread_t)td;
 
 #if TLS_ABOVE_TP
   td = (thread_data*)((uintptr_t)td + sizeof(thread_data) + TP_OFFSET);
 #endif
 
-  stack = (void*)((uintptr_t)stack - sizeof(start_args));
-
-  auto args = (start_args*)stack;
-  args->start_routine = start_routine;
-  args->start_arg = arg;
-
-  stack = (void*)((uintptr_t)stack - sizeof(void*));
-  *(void**)stack = args;
-
   long flags = CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD | CLONE_SYSVSEM | CLONE_SETTLS | CLONE_PARENT_SETTID | CLONE_CHILD_CLEARTID;
 
-  int ret = clone(stack, flags, &td->tid, &td->tid, td);
+  int ret = clone((void*)stack, flags, &td->tid, &td->tid, td);
 
   if (ret < 0)
   {
     munmap(memory, size);
   }
 
-  *thread = (pthread_t)td;
-
   return ret;
+}
+
+//|///////////////////// pthread_join ///////////////////////////////////////
+extern "C" int pthread_join(pthread_t thread, int *rval)
+{
+  auto td = (thread_data*)(thread);
+
+  for(;;)
+  {
+    auto tid = td->tid;
+
+    if (tid == 0)
+      break;
+
+    futex(&td->tid, FUTEX_WAIT, tid, NULL);
+  }
+
+  munmap(td->memory, td->size);
+
+  return 0;
+}
+
+//|///////////////////// pthread_detach /////////////////////////////////////
+extern "C" int pthread_detach(pthread_t thread)
+{
+  auto td = (thread_data*)(thread);
+
+  if (__atomic_fetch_or(&td->flags, THREAD_DETACHED, __ATOMIC_SEQ_CST) & THREAD_DEAD)
+    munmap(td->memory, td->size);
+
+  return 0;
 }

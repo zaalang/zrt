@@ -42,6 +42,7 @@ if(WIN32)
   set(SRCS ${SRCS} fd.windows.cpp)
   set(SRCS ${SRCS} mem.windows.cpp)
   set(SRCS ${SRCS} clock.windows.cpp)
+  set(SRCS ${SRCS} thread.windows.cpp)
   set(SRCS ${SRCS} startup.windows.cpp)
 endif(WIN32)
 
