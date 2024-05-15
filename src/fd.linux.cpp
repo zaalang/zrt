@@ -135,7 +135,7 @@ extern "C" uint32_t fd_open(uintptr_t *fd, string path, uint32_t oflags, uint64_
   if (path.len >= PATH_MAX)
     return ENAMETOOLONG;
 
-  char pathstr[PATH_MAX];
+  char pathstr[PATH_MAX + 1];
   memcpy(pathstr, path.data, path.len);
   pathstr[path.len] = 0;
 
@@ -196,10 +196,10 @@ extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
     fs->type = filetype::directory;
 
   if ((buf.st_mode & S_IFMT) == S_IFREG)
-    fs->type = filetype::regular_file;
+    fs->type = filetype::regular;
 
   if ((buf.st_mode & S_IFMT) == S_IFLNK)
-    fs->type = filetype::symbolic_link;
+    fs->type = filetype::symlink;
 
   fs->size = buf.st_size;
   fs->atime = (uint64_t)buf.st_atim.tv_sec * 1000000000 + buf.st_atim.tv_nsec;

@@ -21,10 +21,10 @@ enum filetype
   block_device,
   character_device,
   directory,
-  regular_file,
+  regular,
   socket_dgram,
   socket_stream,
-  symbolic_link,
+  symlink,
 };
 
 struct filestat

@@ -84,7 +84,7 @@ extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
   if (auto rc = GetFileInformationByHandle(handle, &info); !rc)
     return GetLastError();
 
-  fs->type = filetype::regular_file;
+  fs->type = filetype::regular;
   fs->size = ((uint64_t)info.nFileSizeHigh << 32) + info.nFileSizeLow;
   fs->atime = (((uint64_t)info.ftLastAccessTime.dwHighDateTime << 32) + info.ftLastAccessTime.dwLowDateTime - 116444736000000000) * 100;
   fs->mtime = (((uint64_t)info.ftLastWriteTime.dwHighDateTime << 32) + info.ftLastWriteTime.dwLowDateTime - 116444736000000000) * 100;
