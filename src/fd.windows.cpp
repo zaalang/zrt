@@ -112,6 +112,10 @@ extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n)
     if (auto rc = ReadFile(handle, iovs[i].data, iovs[i].len, &bytes, nullptr); !rc)
     {
       result.erno = GetLastError();
+
+      if (result.erno == ERROR_BROKEN_PIPE)
+        result.erno = 0;
+
       break;
     }
 
@@ -143,6 +147,10 @@ extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t o
     if (auto rc = ReadFile(handle, iovs[i].data, iovs[i].len, &bytes, &overlapped); !rc)
     {
       result.erno = GetLastError();
+
+      if (result.erno == ERROR_BROKEN_PIPE)
+        result.erno = 0;
+
       break;
     }
 
