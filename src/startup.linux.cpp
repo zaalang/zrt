@@ -78,6 +78,7 @@ namespace
 
     dtv[0] = 1;
     dtv[1] = tlsbase + DTP_OFFSET;
+    __builtin_memset((void*)tlsbase, 0, tls.size);
     __builtin_memcpy((void*)tlsbase, (void*)(tls.base + tls.vaddr), tls.len);
 
     td->self = td;
