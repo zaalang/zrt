@@ -70,6 +70,8 @@ endif(MSVC)
 
 add_library(zrt ${SRCS})
 
+set_property(TARGET zrt PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 #
 # install
 #

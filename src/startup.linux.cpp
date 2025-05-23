@@ -57,12 +57,12 @@ struct Elf64_Sym
   uint64_t st_size;
 };
 
+extern "C" uintptr_t vdso_clock_getres;
+extern "C" uintptr_t vdso_clock_gettime;
+
 namespace
 {
   tls_module tls;
-
-  extern "C" uintptr_t vdso_clock_getres;
-  extern "C" uintptr_t vdso_clock_gettime;
 
   void init_tcb(void *memory)
   {
