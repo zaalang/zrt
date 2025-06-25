@@ -90,9 +90,11 @@ extern "C" uint32_t fd_open(uintptr_t *fd, string path, uint32_t oflags, uint64_
 
 extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs);
 
+extern "C" fd_result fd_read(uintptr_t fd, uint8_t *buffer, uint64_t length);
 extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n);
 extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t offset);
 
+extern "C" fd_result fd_write(uintptr_t fd, uint8_t const *buffer, uint64_t length);
 extern "C" fd_result fd_writev(uintptr_t fd, ciovec const *iovs, uint64_t n);
 extern "C" fd_result fd_pwritev(uintptr_t fd, ciovec const *iovs, uint64_t n, uint64_t offset);
 

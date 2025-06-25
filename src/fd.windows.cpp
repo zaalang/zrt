@@ -27,6 +27,35 @@ namespace
 
     return (uintptr_t)handle;
   }
+
+  int WriteConsole(HANDLE handle, uint8_t const *data, int length)
+  {
+    auto beg = data;
+    auto end = data + length;
+
+    while (beg != end)
+    {
+      WCHAR buffer[4096];
+      size_t len = end - beg;
+
+      if (len > sizeof(buffer) / 2)
+      {
+        len = sizeof(buffer) / 2;
+
+        while (len > sizeof(buffer)/2-4 && (beg[len] & 0xC0) == 0x80)
+          --len;
+      }
+
+      auto nchars = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)beg, len, buffer, sizeof(buffer) / 2);
+
+      DWORD written = 0;
+      WriteConsoleW(handle, buffer, nchars, &written, nullptr);
+
+      beg += len;
+    }
+
+    return length;
+  }
 }
 
 //|///////////////////// fd_open ////////////////////////////////////////////
@@ -93,6 +122,33 @@ extern "C" uint32_t fd_stat(uintptr_t fd, filestat *fs)
   return 0;
 }
 
+//|///////////////////// fd_read ////////////////////////////////////////////
+extern "C" fd_result fd_read(uintptr_t fd, uint8_t *buffer, uint64_t length)
+{
+  fd_result result = {};
+
+  if (fd == STDIN)
+  {
+    fd = (uintptr_t)GetStdHandle(STD_INPUT_HANDLE);
+  }
+
+  auto handle = get_osfhandle(fd);
+
+  DWORD bytes = 0;
+
+  if (auto rc = ReadFile(handle, buffer, length, &bytes, nullptr); !rc)
+  {
+    result.erno = GetLastError();
+
+    if (result.erno == ERROR_BROKEN_PIPE)
+      result.erno = 0;
+  }
+
+  result.length = bytes;
+
+  return result;
+}
+
 //|///////////////////// fd_readv ///////////////////////////////////////////
 extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n)
 {
@@ -107,7 +163,7 @@ extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n)
 
   for(uint64_t i = 0; i < n; ++i)
   {
-    DWORD bytes;
+    DWORD bytes = 0;
 
     if (auto rc = ReadFile(handle, iovs[i].data, iovs[i].len, &bytes, nullptr); !rc)
     {
@@ -115,8 +171,6 @@ extern "C" fd_result fd_readv(uintptr_t fd, iovec *iovs, uint64_t n)
 
       if (result.erno == ERROR_BROKEN_PIPE)
         result.erno = 0;
-
-      break;
     }
 
     result.length += bytes;
@@ -142,7 +196,7 @@ extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t o
 
   for(uint64_t i = 0; i < n; ++i)
   {
-    DWORD bytes;
+    DWORD bytes = 0;
 
     if (auto rc = ReadFile(handle, iovs[i].data, iovs[i].len, &bytes, &overlapped); !rc)
     {
@@ -150,8 +204,6 @@ extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t o
 
       if (result.erno == ERROR_BROKEN_PIPE)
         result.erno = 0;
-
-      break;
     }
 
     result.length += bytes;
@@ -159,6 +211,40 @@ extern "C" fd_result fd_preadv(uintptr_t fd, iovec *iovs, uint64_t n, uint64_t o
     if (bytes != iovs[i].len)
       break;
   }
+
+  return result;
+}
+
+//|///////////////////// fd_write ///////////////////////////////////////////
+extern "C" fd_result fd_write(uintptr_t fd, uint8_t const *buffer, uint64_t length)
+{
+  fd_result result = {};
+
+  if (fd == STDOUT || fd == STDERR)
+  {
+    auto handle = GetStdHandle((fd == STDOUT) ? STD_OUTPUT_HANDLE : STD_ERROR_HANDLE);
+
+    DWORD mode;
+    if (GetConsoleMode(handle, &mode))
+    {
+      result.length = WriteConsole(handle, buffer, length);
+
+      return result;
+    }
+
+    fd = (uintptr_t)handle;
+  }
+
+  auto handle = get_osfhandle(fd);
+
+  DWORD written = 0;
+
+  if (auto rc = WriteFile(handle, buffer, length, &written, nullptr); !rc)
+  {
+    result.erno = GetLastError();
+  }
+
+  result.length = written;
 
   return result;
 }
@@ -177,32 +263,7 @@ extern "C" fd_result fd_writev(uintptr_t fd, ciovec const *iovs, uint64_t n)
     {
       for(uint64_t i = 0; i < n; ++i)
       {
-        auto beg = iovs[i].data;
-        auto end = iovs[i].data + iovs[i].len;
-
-        while (beg != end)
-        {
-          WCHAR buffer[4096];
-
-          size_t len = end - beg;
-
-          if (len > sizeof(buffer) / 2)
-          {
-            len = sizeof(buffer) / 2;
-
-            while (len > sizeof(buffer)/2-4 && (beg[len] & 0xC0) == 0x80)
-              --len;
-          }
-
-          auto nchars = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)beg, len, buffer, sizeof(buffer) / 2);
-
-          DWORD written;
-          WriteConsoleW(handle, buffer, nchars, &written, nullptr);
-
-          beg += len;
-        }
-
-        result.length += iovs[i].len;
+        result.length += WriteConsole(handle, iovs[i].data, iovs[i].len);
       }
 
       return result;
@@ -215,15 +276,17 @@ extern "C" fd_result fd_writev(uintptr_t fd, ciovec const *iovs, uint64_t n)
 
   for(uint64_t i = 0; i < n; ++i)
   {
-    DWORD written;
+    DWORD written = 0;
 
     if (auto rc = WriteFile(handle, iovs[i].data, iovs[i].len, &written, nullptr); !rc)
     {
       result.erno = GetLastError();
-      break;
     }
 
     result.length += written;
+
+    if (written != iovs[i].len)
+      break;
   }
 
   return result;
@@ -243,15 +306,17 @@ extern "C" fd_result fd_pwritev(uintptr_t fd, ciovec const *iovs, uint64_t n, ui
 
   for(uint64_t i = 0; i < n; ++i)
   {
-    DWORD written;
+    DWORD written = 0;
 
     if (auto rc = WriteFile(handle, iovs[i].data, iovs[i].len, &written, &overlapped); !rc)
     {
       result.erno = GetLastError();
-      break;
     }
 
     result.length += written;
+
+    if (written != iovs[i].len)
+      break;
   }
 
   return result;
