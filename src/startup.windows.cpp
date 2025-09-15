@@ -151,11 +151,11 @@ namespace
   }
 }
 
+int main(int, char**, char**);
+
 extern "C" {
 
   int _fltused = 0;
-
-  int main(int, char**, char**);
 
   int mainCRTStartup()
   {

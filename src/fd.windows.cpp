@@ -63,10 +63,12 @@ extern "C" uint32_t fd_open(uintptr_t *fd, string path, uint32_t oflags, uint64_
 {
   WCHAR filename[4096];
 
-  auto nchars = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)path.data, path.len, filename, sizeof(filename) / 2);
+  auto nchars = MultiByteToWideChar(CP_UTF8, 0, (LPCCH)path.data, path.len, filename, sizeof(filename) / 2 - 1);
 
   if (nchars == 0)
     return GetLastError();
+  
+  filename[nchars] = 0;
 
   auto access = 0;
 
